@@ -8,6 +8,8 @@ import java.util.Stack;
  */
 public class Space {
 
+    private static final char BLANK = '_';
+
     private final int row;
     private final int col;
 
@@ -18,7 +20,7 @@ public class Space {
         this.row = row;
         this.col = col;
         this.mem = new Stack<>();
-        this.curr = ' ';
+        this.curr = BLANK;
     }
 
     public void push(final char c){
@@ -27,11 +29,14 @@ public class Space {
     }
 
     public void pop(){
-        try {
+        curr = BLANK;
+        if (!mem.isEmpty()){
             curr = mem.pop();
-        }catch (EmptyStackException e){
-            curr = ' ';
         }
+    }
+
+    public char getChar(){
+        return curr;
     }
 
     public int getRow(){
