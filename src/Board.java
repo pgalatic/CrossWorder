@@ -61,6 +61,36 @@ public class Board {
 
     }
 
+    private void buildBoard(String filename){
+
+        System.out.println("BOARD CONSTRUCTION YIELDS:");
+        System.out.println("---------------------------");
+        // construct the initial board
+        for (int row = 0; row < BOARD_SIZE; row++){
+            char c;
+            for (int col = 0; col < BOARD_SIZE; col++){
+                c = line[col];
+                switch (c){
+                    case BLANK:
+                        board[row][col] = new Space(row, col);
+                        break;
+                    case NULL_SPACE:
+                        board[row][col] = null;
+                        break;
+                }
+                System.out.print(c);
+            }
+            System.out.println();
+            // advance at the end, since we clip one line at the start
+            try {
+                line = fileInput.nextLine().toCharArray();
+            }catch (NoSuchElementException e){
+                break;
+            }
+        }
+        System.out.println("---------------------------");
+    }
+
     /**
      * Utility code to determine whether or not to add a Space to the
      * pointsOfInterest array, which is a HashSet of words that mark the
@@ -95,35 +125,7 @@ public class Board {
         poiIterator.addAll(pointsOfInterest);
     }
 
-    private void buildBoard(String filename){
 
-        System.out.println("BOARD CONSTRUCTION YIELDS:");
-        System.out.println("---------------------------");
-        // construct the initial board
-        for (int row = 0; row < BOARD_SIZE; row++){
-            char c;
-            for (int col = 0; col < BOARD_SIZE; col++){
-                c = line[col];
-                switch (c){
-                    case BLANK:
-                        board[row][col] = new Space(row, col);
-                        break;
-                    case NULL_SPACE:
-                        board[row][col] = null;
-                        break;
-                }
-                System.out.print(c);
-            }
-            System.out.println();
-            // advance at the end, since we clip one line at the start
-            try {
-                line = fileInput.nextLine().toCharArray();
-            }catch (NoSuchElementException e){
-                break;
-            }
-        }
-        System.out.println("---------------------------");
-    }
 
     /** Initializes the board. */
     public void init(){
