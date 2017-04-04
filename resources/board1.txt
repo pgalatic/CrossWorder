@@ -1,8 +1,7 @@
-ooo..oooo
-oooo..ooo
-.oooo.ooo
-..oooooo.
-.ooooo...
-ooo.ooooo
-ooo..oooo
-ooo...ooo
+___.___
+___.___
+___.___
+___.___
+___.___
+___.___
+___.___

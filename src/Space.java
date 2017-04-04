@@ -31,7 +31,12 @@ public class Space {
     public void pop(){
         curr = BLANK;
         if (!mem.isEmpty()){
-            curr = mem.pop();
+            mem.pop();
+            if (mem.isEmpty()){
+                curr = BLANK;
+            }else{
+                curr = mem.peek();
+            }
         }
     }
 
@@ -47,8 +52,9 @@ public class Space {
         return col;
     }
 
-    public int[] getCoords(){
-        return new int[]{row, col};
+    @Override
+    public String toString(){
+        return String.format("%s - (%d, %d)", curr, row, col);
     }
 
 }

@@ -10,11 +10,12 @@ public class Main {
             System.err.println("Usage: java CrossWorder");
         }
 
-        try {
-            Board b = new Board();
-        }catch (Exception e){
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        String filename = "resources/board2.txt";
+
+        Board b = new Board(filename);
+        b.init();
+        b.backtrack();
+
+        System.out.println("...Finished.");
     }
 }

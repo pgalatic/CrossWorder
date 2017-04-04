@@ -17,40 +17,87 @@ public class Board {
     private static final Scanner userInput = new Scanner(System.in);
     private static final WordFinder wordFinder = new WordFinder();
 
+
     private static final char BLANK = '_';
     private static final char NULL_SPACE = '.'; // both for out of bounds and
                                                 // building the regex
 
     private static final int MAX_OPTIONS_LENGTH = 10;
+    private static final int MAX_STACK_LIMIT = 300;
     private final int BOARD_SIZE;
 
     // STATE
+    private static Scanner fileInput;
     private Space[][] board;
     private HashSet<PointOfInterest> pointsOfInterest;
+    private HashSet<PointOfInterest> poiIterator;
     private Stack<PointOfInterest> memoryStack;
-    private boolean goalFound;
-    private boolean waitUser; // wait for user input or not
+    private static String filename;
+    private boolean waitUser = true; // wait for user input or not
+    private char[] line;
     private int skip = 0;
-    private int poiIndex = 0; // current poi
+    private int stackSize = 0;
 
-    public Board() throws IOException, Exception{
+    public Board(String filename){
 
-        Scanner in;
+        this.filename = filename;
         File input;
-        char[] line;
 
         // reading from sample file
-        String filename = "resources/board1.txt";
         input = new File(filename);
-        in = new Scanner(input);
+        try {
+            fileInput = new Scanner(input);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
 
         // initialize important state
-        line = in.nextLine().toCharArray();
+        line = fileInput.nextLine().toCharArray();
         BOARD_SIZE = line.length;
         board = new Space[BOARD_SIZE][BOARD_SIZE];
         pointsOfInterest = new HashSet<>();
+        poiIterator = new HashSet<>();
+        memoryStack = new Stack<>();
 
-        System.out.println("BOARD CONSTRUCTION YIELDS:\n");
+    }
+
+    /**
+     * Utility code to determine whether or not to add a Space to the
+     * pointsOfInterest array, which is a HashSet of words that mark the
+     * 'start' of a word in the crossword puzzle.
+     *
+     * PointOfInterest objects are added with both the ACROSS and DOWN
+     * parameters, to make backtracking easier. */
+    private void buildPointsOfInterest() {
+        Space currSpace;
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board.length; col++) {
+                currSpace = board[row][col];
+                if (currSpace == null) {
+                    continue;
+                }
+                if (row == 0 && col == 0) {
+                    pointsOfInterest.add(new PointOfInterest(currSpace, Direction.ACROSS));
+                    pointsOfInterest.add(new PointOfInterest(currSpace, Direction.DOWN));
+                } else if (row > 0 && col == 0) {
+                    pointsOfInterest.add(new PointOfInterest(currSpace, Direction.ACROSS));
+                } else if (row == 0 && col > 0) {
+                    pointsOfInterest.add(new PointOfInterest(currSpace, Direction.DOWN));
+                } else {
+                    if (board[row][col - 1] == null) {
+                        pointsOfInterest.add(new PointOfInterest(currSpace, Direction.ACROSS));
+                    } else if (board[row - 1][col] == null) {
+                        pointsOfInterest.add(new PointOfInterest(currSpace, Direction.DOWN));
+                    }
+                }
+            }
+        }
+        poiIterator.addAll(pointsOfInterest);
+    }
+
+    private void buildBoard(String filename){
+
+        System.out.println("BOARD CONSTRUCTION YIELDS:");
         System.out.println("---------------------------");
         // construct the initial board
         for (int row = 0; row < BOARD_SIZE; row++){
@@ -64,40 +111,24 @@ public class Board {
                     case NULL_SPACE:
                         board[row][col] = null;
                         break;
-                    default:
-                        throw new Exception("Invalid data in file. Cannot construct board."){};
                 }
                 System.out.print(c);
             }
             System.out.println();
             // advance at the end, since we clip one line at the start
             try {
-                line = in.nextLine().toCharArray();
+                line = fileInput.nextLine().toCharArray();
             }catch (NoSuchElementException e){
                 break;
             }
         }
         System.out.println("---------------------------");
+    }
 
-        /**
-         * Utility code to determine whether or not to add a Space to the
-         * pointsOfInterest array, which is a HashSet of words that mark the
-         * 'start' of a word in the crossword puzzle.
-         *
-         * PointOfInterest objects are added with both the ACROSS and DOWN
-         * parameters, to make backtracking easier. */
-        for (int row = 0; row < board.length; row++){
-            for (int col = 0; col < board.length; col++) {
-                if (row == 0 || col == 0) {
-                    pointsOfInterest.add(new PointOfInterest(board[row][col], Direction.ACROSS));
-                    pointsOfInterest.add(new PointOfInterest(board[row][col], Direction.DOWN));
-                } else if (board[row - 1][col] == null || board[row][col - 1] == null) {
-                    pointsOfInterest.add(new PointOfInterest(board[row][col], Direction.ACROSS));
-                    pointsOfInterest.add(new PointOfInterest(board[row][col], Direction.DOWN));
-                }
-            }
-        }
-
+    /** Initializes the board. */
+    public void init(){
+        buildBoard(filename);
+        buildPointsOfInterest();
     }
 
     /**
@@ -123,22 +154,48 @@ public class Board {
             return this;
         }
 
+        if (poiIterator.isEmpty()){
+            poiIterator.addAll(pointsOfInterest);
+        }
         // This line of code takes the points of interest set, converts it to
         // an array, and then puts a random element of that array into curr.
-        PointOfInterest poi = (PointOfInterest) pointsOfInterest.toArray()
-                [rand.nextInt(pointsOfInterest.size())];
-        while (poi.getChar() != BLANK) {
-            poi = (PointOfInterest) pointsOfInterest.toArray()
-                    [rand.nextInt(pointsOfInterest.size())];
-        }
+        PointOfInterest poi = (PointOfInterest) poiIterator.toArray()
+                [rand.nextInt(poiIterator.size())];
+        poiIterator.remove(poi);
 
         // Now we build the regular expression.
+        String regex = buildRegex(poi);
+
+        // Using that regular expression, find words that we can insert.
+        ArrayList<String> nextVals = wordFinder.findMatches(regex.toString());
+
+        while (!nextVals.isEmpty()){
+            String nextVal = promptUser(poi, nextVals);
+            insertValue(poi, nextVal);
+            memoryStack.push(poi);
+            stackSize++;
+            backtrack();
+            poi = memoryStack.pop();
+            rollback(poi);
+        }
+
+        return null;
+
+    }
+
+    /**
+     * Builds a regular expression representing all words whose start position
+     * and direction match the position of interest, taking into account the
+     * current state of the board.
+     */
+    private String buildRegex(PointOfInterest poi){
         StringBuilder regex = new StringBuilder();
+        regex.append("\\b"); // so that we can match at the start of any line
         switch (poi.d){
             case ACROSS:
-                int r = poi.getRow();
-                for (int col = poi.getCol(); col < BOARD_SIZE; col++){
-                    char curr = board[r][col].getChar();
+                int row = poi.s.getRow();
+                for (int col = poi.s.getCol(); col < BOARD_SIZE && board[row][col] != null; col++){
+                    char curr = board[row][col].getChar();
                     if (curr != BLANK){
                         regex.append(curr);
                     }else{
@@ -147,9 +204,9 @@ public class Board {
                 }
                 break;
             case DOWN:
-                int column = poi.getCol();
-                for (int row = poi.getRow(); row < BOARD_SIZE; row++){
-                    char curr = board[row][column].getChar();
+                int column = poi.s.getCol();
+                for (int r = poi.s.getRow(); r < BOARD_SIZE && board[r][column] != null; r++){
+                    char curr = board[r][column].getChar();
                     if (curr != BLANK){
                         regex.append(curr);
                     }else{
@@ -159,21 +216,7 @@ public class Board {
                 break;
         }
         regex.append("\\b"); // so that we don't match both "car" and "cargo"
-
-        // Using that regular expression, find words that we can insert.
-        ArrayList<String> nextVals = wordFinder.findMatches(regex.toString());
-
-        while (!nextVals.isEmpty()){
-            String nextVal = promptUser(poi, nextVals);
-            insertValue(poi, nextVal);
-            memoryStack.push(poi);
-            backtrack();
-            poi = memoryStack.pop();
-            rollback(poi);
-        }
-
-        return null;
-
+        return regex.toString();
     }
 
     /**
@@ -186,18 +229,23 @@ public class Board {
      * @param nextVal: the word to be inserted
      */
     private void insertValue(PointOfInterest poi, String nextVal){
+        Space s;
         char[] word = nextVal.toCharArray();
-        int row = poi.getRow();
-        int col = poi.getCol();
+        int row = poi.s.getRow();
+        int col = poi.s.getCol();
         switch (poi.d){
             case ACROSS:
-                for (int i = 0; i + col < BOARD_SIZE; i++){
-                    board[row][col + i].push(word[i]);
+                for (int i = 0; i + col < BOARD_SIZE && i < word.length; i++){
+                    s = board[row][col + i];
+                    if (s == null){ break; }
+                    s.push(word[i]);
                 }
                 break;
             case DOWN:
-                for (int i = 0; i + row < BOARD_SIZE; i++){
-                    board[row + i][col].push(word[i]);
+                for (int i = 0; i + row < BOARD_SIZE && i < word.length; i++){
+                    s = board[row + i][col];
+                    if (s == null){ break; }
+                    s.push(word[i]);
                 }
                 break;
         }
@@ -210,17 +258,22 @@ public class Board {
      * @param poi: the point of interest to be rolled back
      */
     private void rollback(PointOfInterest poi){
-        int row = poi.getRow();
-        int col = poi.getCol();
+        int row = poi.s.getRow();
+        int col = poi.s.getCol();
+        Space s;
         switch (poi.d){
             case ACROSS:
                 for (int i = 0; i + col < BOARD_SIZE; i++){
-                    board[row][col + i].pop();
+                    s = board[row][col + i];
+                    if (s == null){ break; }
+                    s.pop();
                 }
                 break;
             case DOWN:
                 for (int i = 0; i + row < BOARD_SIZE; i++){
-                    board[row + i][col].pop();
+                    s = board[row + i][col];
+                    if (s == null){ break; }
+                    s.pop();
                 }
                 break;
         }
@@ -237,9 +290,10 @@ public class Board {
         String[] command;
         boolean commandRecognized = false;
 
-        System.out.println(String.format("INSERT: (%d, %d)", poi.getRow(), poi.getCol()));
+        System.out.println(String.format("INSERT: (%d, %d)", poi.s.getRow(), poi.s.getCol()));
 
         int listSize = nextVals.size();
+        if (listSize == 1){ return nextVals.get(0); }
         System.out.println(String.format("%d AVAILABLE OPTIONS", listSize));
         if (listSize > 10){
             System.out.println(String.format("PRINTING RANDOM %d...", MAX_OPTIONS_LENGTH));
@@ -255,7 +309,6 @@ public class Board {
             }
         }
 
-        System.out.println(boardToString());
         System.out.println("Options:");
         System.out.println("\t1) Enter the number of the word you'd like to choose");
         System.out.println("\t2) Enter \"r\" to choose a random word from the total list");
@@ -263,24 +316,30 @@ public class Board {
         System.out.println("\t4) Enter \"-1\" to turn off prompting");
 
         while (!commandRecognized) {
-            System.out.println("\n>");
+            System.out.print("\n> ");
             command = userInput.next().split(" ");
             if (command.length == 1){
                 if (command[0].equals("r")){
                     return nextVals.remove(rand.nextInt(nextVals.size()));
                 }else {
-                    char c = command[0].toCharArray()[0];
+                    char[] curr = command[0].toCharArray();
+                    char c;
+                    if (curr.length > 1){
+                        if (curr[0] == '-'){
+                            waitUser = false;
+                            return nextVals.remove(rand.nextInt(nextVals.size()));
+                        }
+                        System.out.println("Command not recognized.");
+                        continue;
+                    }else{
+                        c = curr[0];
+                    }
                     if (Character.isDigit(c)){
                         int i = Character.getNumericValue(c);
                         switch (i){
-                            case -1:
-                                waitUser = false;
-                                return nextVals.remove(rand.nextInt(nextVals.size()));
                             default:
-                                if (i < listSize){
+                                if (i < listSize) {
                                     return nextVals.remove(i);
-                                }else{
-                                    System.out.println("Command not recognized.");
                                 }
                         }
                     }
@@ -315,19 +374,22 @@ public class Board {
      *  1) Every space is filled
      *  2) Every word is present in the WordList
      *
+     *  Public only for testing purposes.
+     *
      *  @return if the goal has been met
      */
-    private boolean isGoal(){
+    public boolean isGoal(){
         ArrayList<String> results;
-        String currWord = "";
+        String currWord;
         int row, col;
         char c;
         for (PointOfInterest poi : pointsOfInterest){
-            row = poi.getRow();
-            col = poi.getCol();
+            row = poi.s.getRow();
+            col = poi.s.getCol();
+            currWord = "\\b";
             switch (poi.d){
                 case ACROSS:
-                    while (col < BOARD_SIZE) {
+                    while (col < BOARD_SIZE && board[row][col] != null) {
                         c = board[row][col].getChar();
                         if (c == BLANK){ return false; }
                         currWord += c;
@@ -335,7 +397,7 @@ public class Board {
                     }
                     break;
                 case DOWN:
-                    while (row < BOARD_SIZE){
+                    while (row < BOARD_SIZE && board[row][col] != null){
                         c = board[row][col].getChar();
                         if (c == BLANK){ return false; }
                         currWord += c;
@@ -354,30 +416,52 @@ public class Board {
     }
 
     private String boardToString(){
+        Space s;
         String rtn = "";
         for (int row = 0; row < BOARD_SIZE; row++){
             for (int col = 0; col < BOARD_SIZE; col++){
-                rtn += board[row][col].getChar();
+                s = board[row][col];
+                if (s == null){
+                    rtn += NULL_SPACE;
+                }else {
+                    rtn += board[row][col].getChar();
+                }
             }
             rtn += "\n";
         }
         return rtn;
     }
 
+    /** STRICTLY FOR DEBUGGING. */
+    public void setRow(int row, Space[] data){
+        board[row] = data;
+    }
+
+    /** STRICTLY FOR DEBUGGING. */
+    public void addPOI(Space s, Direction d){
+        PointOfInterest poi = new PointOfInterest(s, d);
+        pointsOfInterest.add(poi);
+        poiIterator.add(poi);
+    }
+
     /** Enum for holding direction. */
-    private enum Direction{ ACROSS, DOWN }
+    public enum Direction{ ACROSS, DOWN }
 
     /**
      * Simple class for keeping track of Spaces where words begin, as those
      * spaces will be double-counted. */
-    private class PointOfInterest extends Space{
+    private class PointOfInterest{
         Space s;
         Direction d;
 
         PointOfInterest(Space s, final Direction d){
-            super(s.getRow(), s.getCol());
             this.s = s;
             this.d = d;
+        }
+
+        @Override
+        public String toString(){
+            return s.toString() + " : " + d;
         }
 
     }

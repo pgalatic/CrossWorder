@@ -13,7 +13,8 @@ import java.util.Arrays;
 public class WordFinderTest {
 
     private static final String TEST_FILENAME = "resources/test.txt";
-    private static final String SAMPLE_REGEX = ".a.\\b";
+    private static final String SAMPLE_REGEX_1 = ".a.\\b";
+    private static final String SAMPLE_REGEX_2 = "\\b...\\b";
 
     private static final String TEST_REGEX_1 = "[aeiou][aeiou][aeiou][aeiou][aeiou]";
     private static final String TEST_REGEX_2 = "[tongues][tongues][tongues][tongues][tongues][tongues][tongues][tongues]";
@@ -30,11 +31,14 @@ public class WordFinderTest {
         final String EXPECTED_MATCH_1 = "bar";
         final String EXPECTED_MATCH_2 = "car";
         CuT = new WordFinder(TEST_FILENAME);
-        ArrayList<String> matches = CuT.findMatches(SAMPLE_REGEX);
+        ArrayList<String> matches = CuT.findMatches(SAMPLE_REGEX_1);
 
         Assert.assertEquals(2, matches.size());
         Assert.assertEquals(EXPECTED_MATCH_1, matches.get(0));
         Assert.assertEquals(EXPECTED_MATCH_2, matches.get(1));
+
+        matches = CuT.findMatches(SAMPLE_REGEX_2);
+        Assert.assertEquals(4, matches.size());
     }
 
     /**
