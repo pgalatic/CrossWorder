@@ -29,6 +29,7 @@ public class Board {
     // STATE
     private static Scanner fileInput;
     private Space[][] board;
+	private Space[][] returnBoard;
     private HashSet<PointOfInterest> pointsOfInterest;
     private HashSet<PointOfInterest> poiIterator;
     private Stack<PointOfInterest> memoryStack;
@@ -122,7 +123,6 @@ public class Board {
                 }
             }
         }
-        poiIterator.addAll(pointsOfInterest);
     }
 
 
@@ -134,6 +134,7 @@ public class Board {
     }
 
     /**
+	 * Backtracker: Finds the first valid goal configuration, then returns.
      * Backtracking algorithm:
      *  0) If all the points of interest are filled, check if the goal has been
      *      found. If it has, quit.
@@ -156,14 +157,9 @@ public class Board {
             return this;
         }
 
-        if (poiIterator.isEmpty()){
-            poiIterator.addAll(pointsOfInterest);
-        }
-        // This line of code takes the points of interest set, converts it to
-        // an array, and then puts a random element of that array into curr.
-        PointOfInterest poi = (PointOfInterest) poiIterator.toArray()
-                [rand.nextInt(poiIterator.size())];
-        poiIterator.remove(poi);
+		// Find poi with minimum remaining spaces.
+		PointOfInterest poi = findMinimumRemainingPOI();
+		if (poi == null){ return null; }
 
         // Now we build the regular expression.
         String regex = buildRegex(poi);
@@ -175,8 +171,7 @@ public class Board {
             String nextVal = promptUser(poi, nextVals);
             insertValue(poi, nextVal);
             memoryStack.push(poi);
-            stackSize++;
-            backtrack();
+            if (!(backtrack() == null)){ return this; }
             poi = memoryStack.pop();
             rollback(poi);
         }
@@ -185,11 +180,51 @@ public class Board {
 
     }
 
+	/**
+	 * Finds the Point of Interest with the fewest number of blank spaces. In
+	 * the case of a tie, the first element found is chosen.
+	 */
+	private PointOfInterest findMinimumRemainingPOI(){
+		int count = 0, row, col;
+		int max = BOARD_SIZE + 1;
+		Space curr;
+		PointOfInterest rtn = null;
+		for (PointOfInterest poi : pointsOfInterest){
+			curr = poi.s;
+			row = curr.getRow();
+			col = curr.getCol();
+			switch (poi.d){
+				case ACROSS:
+					while (col < BOARD_SIZE && curr != null){
+						if (curr.getChar() == BLANK){
+							count++;
+						}
+						curr = board[row][col];
+						col++;
+					}
+					break;
+				case DOWN:
+					while (row < BOARD_SIZE && curr != null){
+						if (curr.getChar() == BLANK){
+							count++;
+						}
+						curr = board[row][col];
+						row++;
+					}
+					break;
+			}
+		
+			if (count > 0 && count < max){ max = count; rtn = poi; }
+			count = 0;
+		}
+		return rtn;
+	}
     /**
      * Builds a regular expression representing all words whose start position
      * and direction match the position of interest, taking into account the
      * current state of the board.
      */
+
     private String buildRegex(PointOfInterest poi){
         StringBuilder regex = new StringBuilder();
         regex.append("\\b"); // so that we can match at the start of any line
