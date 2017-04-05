@@ -29,12 +29,12 @@ public class Board {
     // STATE
     private static Scanner fileInput;
     private Space[][] board;
-	private Space[][] returnBoard;
+    private HashSet<String> totalWords;
     private HashSet<PointOfInterest> pointsOfInterest;
     private HashSet<PointOfInterest> poiIterator;
     private Stack<PointOfInterest> memoryStack;
     private static String filename;
-    private boolean waitUser = true; // wait for user input or not
+    private boolean waitUser = false; // wait for user input or not
     private char[] line;
     private int skip = 0;
     private int stackSize = 0;
@@ -56,10 +56,10 @@ public class Board {
         line = fileInput.nextLine().toCharArray();
         BOARD_SIZE = line.length;
         board = new Space[BOARD_SIZE][BOARD_SIZE];
+        totalWords = new HashSet<>();
         pointsOfInterest = new HashSet<>();
         poiIterator = new HashSet<>();
         memoryStack = new Stack<>();
-
     }
 
     private void buildBoard(String filename){
@@ -78,6 +78,8 @@ public class Board {
                     case NULL_SPACE:
                         board[row][col] = null;
                         break;
+                    default:
+                        board[row][col] = new Space(row, col, Character.toLowerCase(c));
                 }
                 System.out.print(c);
             }
@@ -148,11 +150,6 @@ public class Board {
      *      return.
      */
     public Board backtrack(){
-        System.out.println("CURRENT BOARD CONFIGURATION: ");
-        System.out.println("-------------");
-        System.out.println(boardToString());
-        System.out.println("-------------");
-
         if (isGoal()){
             return this;
         }
@@ -172,6 +169,8 @@ public class Board {
             insertValue(poi, nextVal);
             memoryStack.push(poi);
             if (!(backtrack() == null)){ return this; }
+            System.out.println(boardToString());
+            nextVals.remove(nextVal);
             poi = memoryStack.pop();
             rollback(poi);
         }
@@ -286,6 +285,7 @@ public class Board {
                 }
                 break;
         }
+        totalWords.add(nextVal);
     }
 
     /**
@@ -417,13 +417,12 @@ public class Board {
      */
     public boolean isGoal(){
         ArrayList<String> results;
-        String currWord;
+        String currWord = "";
         int row, col;
         char c;
         for (PointOfInterest poi : pointsOfInterest){
             row = poi.s.getRow();
             col = poi.s.getCol();
-            currWord = "\\b";
             switch (poi.d){
                 case ACROSS:
                     while (col < BOARD_SIZE && board[row][col] != null) {
@@ -441,12 +440,9 @@ public class Board {
                         row++;
                     }
             }
-            if (currWord.isEmpty()){
-                throw new InputMismatchException("Check for an error in isGoal()");
-            }
-            currWord += "\\b";
-            results = wordFinder.findMatches(currWord);
-            if (results.isEmpty()){ return false; }
+            if (    !totalWords.contains(currWord) &&
+                    wordFinder.findMatches("\\b" + currWord + "\\b").isEmpty())
+            { return false; }
         }
 
         return true;

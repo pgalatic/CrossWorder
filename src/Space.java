@@ -9,6 +9,7 @@ import java.util.Stack;
 public class Space {
 
     private static final char BLANK = '_';
+    private final char initial;
 
     private final int row;
     private final int col;
@@ -21,6 +22,15 @@ public class Space {
         this.col = col;
         this.mem = new Stack<>();
         this.curr = BLANK;
+        this.initial = BLANK;
+    }
+
+    public Space(final int row, final int col, final char initial){
+        this.row = row;
+        this.col = col;
+        this.mem = new Stack<>();
+        this.curr = initial;
+        this.initial = initial;
     }
 
     public void push(final char c){
@@ -29,11 +39,11 @@ public class Space {
     }
 
     public void pop(){
-        curr = BLANK;
+        curr = initial;
         if (!mem.isEmpty()){
             mem.pop();
             if (mem.isEmpty()){
-                curr = BLANK;
+                curr = initial;
             }else{
                 curr = mem.peek();
             }

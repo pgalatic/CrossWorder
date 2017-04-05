@@ -10,7 +10,7 @@ public class Main {
             System.err.println("Usage: java CrossWorder");
         }
 
-        String filename = "../resources/board0.txt";
+        String filename = "resources/board3.txt";
 
         Board b = new Board(filename);
 		System.out.println("Initializing board...");
