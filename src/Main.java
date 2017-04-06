@@ -10,7 +10,7 @@ public class Main {
             System.err.println("Usage: java CrossWorder");
         }
 
-        String filename = "resources/board3.txt";
+        String filename = "../resources/board0.txt";
 
         Board b = new Board(filename);
 		System.out.println("Initializing board...");
@@ -18,6 +18,8 @@ public class Main {
 		System.out.println("Starting to backtrack...");
         b.backtrack();
 
+		System.out.println("RESULT:");
+		System.out.println(b.boardToString());
         System.out.println("...Finished.");
     }
 }

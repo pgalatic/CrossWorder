@@ -154,21 +154,19 @@ public class Board {
             return this;
         }
 
-		// Find poi with minimum remaining spaces.
-		PointOfInterest poi = findMinimumRemainingPOI();
+        // Find which place we want to insert into.
+        PointOfInterest poi = getMinimumRemaining();
 		if (poi == null){ return null; }
 
-        // Now we build the regular expression.
-        String regex = buildRegex(poi);
-
-        // Using that regular expression, find words that we can insert.
-        ArrayList<String> nextVals = wordFinder.findMatches(regex.toString());
+		// From there, get the next values.
+		ArrayList<String> nextVals = poi.getPossibleValues();
 
         while (!nextVals.isEmpty()){
             String nextVal = promptUser(poi, nextVals);
             insertValue(poi, nextVal);
             memoryStack.push(poi);
             if (!(backtrack() == null)){ return this; }
+			//System.out.println("FAILED... BACKTRACKING.");
             System.out.println(boardToString());
             nextVals.remove(nextVal);
             poi = memoryStack.pop();
@@ -180,41 +178,25 @@ public class Board {
     }
 
 	/**
-	 * Finds the Point of Interest with the fewest number of blank spaces. In
-	 * the case of a tie, the first element found is chosen.
+	 * Finds and returns the Point of Interest with the fewest number of 
+	 * remaining possibilities. It iterates through all the PointsOfInterest,
+	 * builds regexes based on their contents, then attaches an updated list
+	 * to a PointOfInterest and returns it.
 	 */
-	private PointOfInterest findMinimumRemainingPOI(){
-		int count = 0, row, col;
-		int max = BOARD_SIZE + 1;
-		Space curr;
+	private PointOfInterest getMinimumRemaining(){
+		ArrayList<String> currVals = new ArrayList<>();
 		PointOfInterest rtn = null;
+		String regex = "";
+		int currMax = Integer.MAX_VALUE;
+		int currSize;
 		for (PointOfInterest poi : pointsOfInterest){
-			curr = poi.s;
-			row = curr.getRow();
-			col = curr.getCol();
-			switch (poi.d){
-				case ACROSS:
-					while (col < BOARD_SIZE && curr != null){
-						if (curr.getChar() == BLANK){
-							count++;
-						}
-						curr = board[row][col];
-						col++;
-					}
-					break;
-				case DOWN:
-					while (row < BOARD_SIZE && curr != null){
-						if (curr.getChar() == BLANK){
-							count++;
-						}
-						curr = board[row][col];
-						row++;
-					}
-					break;
+			regex = buildRegex(poi);
+			currVals = wordFinder.findMatches(regex);
+			currSize = currVals.size();
+			if (currSize > 1 && currSize < currMax){
+				rtn = poi;
+				rtn.setPossibleValues(currVals);
 			}
-		
-			if (count > 0 && count < max){ max = count; rtn = poi; }
-			count = 0;
 		}
 		return rtn;
 	}
@@ -324,7 +306,9 @@ public class Board {
         // If we're not waiting on the user, pop a random term
         if (skip > 0){ skip--; return nextVals.remove(rand.nextInt(nextVals.size())); }
         if (!waitUser){ return nextVals.remove(rand.nextInt(nextVals.size())); }
-        String[] command;
+        
+		System.out.println(boardToString());
+		String[] command;
         boolean commandRecognized = false;
 
         System.out.println(String.format("INSERT: (%d, %d)", poi.s.getRow(), poi.s.getCol()));
@@ -448,7 +432,7 @@ public class Board {
         return true;
     }
 
-    private String boardToString(){
+   	public String boardToString(){
         Space s;
         String rtn = "";
         for (int row = 0; row < BOARD_SIZE; row++){
@@ -486,11 +470,20 @@ public class Board {
     private class PointOfInterest{
         Space s;
         Direction d;
+		ArrayList<String> possibleValues;
 
         PointOfInterest(Space s, final Direction d){
             this.s = s;
             this.d = d;
         }
+
+		public void setPossibleValues(ArrayList<String> vals){
+			possibleValues = vals;
+		}
+
+		public ArrayList<String> getPossibleValues(){
+			return possibleValues;
+		}
 
         @Override
         public String toString(){
