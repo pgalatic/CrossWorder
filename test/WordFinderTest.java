@@ -16,7 +16,7 @@ public class WordFinderTest {
     private static final String SAMPLE_REGEX_1 = ".a.\\b";
     private static final String SAMPLE_REGEX_2 = "\\b...\\b";
 
-    private static final String TEST_REGEX_1 = "[aeiou][aeiou][aeiou][aeiou][aeiou]";
+    private static final String TEST_REGEX_1 = "\\b[aeiou][aeiou][aeiou][aeiou]";
     private static final String TEST_REGEX_2 = "[tongues][tongues][tongues][tongues][tongues][tongues][tongues][tongues]";
     private static final String TEST_REGEX_3 = ".(.)(.)\\2.\\1.";
 
@@ -44,6 +44,9 @@ public class WordFinderTest {
     /**
      * Tests that the more complex regular expressions, tested against a much
      * larger wordlist, are returning useful results.
+     *
+     * FIXME Currently bugged; the expected words are no longer in the
+     * wordlist.
      */
     @Test
     public void test_matches(){
@@ -60,21 +63,25 @@ public class WordFinderTest {
                         "ungotten", "unguents")
         );
 
-        final int EXPECTED_MATCH_LISTSIZE = 274;
+
         CuT = new WordFinder();
         ArrayList<String> matches;
 
         matches = CuT.findMatches(TEST_REGEX_1);
+        Assert.assertFalse(matches.isEmpty());
         for (String EXPECTED : EXPECTED_MATCHES_1){
             Assert.assertTrue(matches.contains(EXPECTED));
         }
+
         matches = CuT.findMatches(TEST_REGEX_2);
+        Assert.assertFalse(matches.isEmpty());
         for (String EXPECTED : EXPECTED_MATCHES_2){
             Assert.assertTrue(matches.contains(EXPECTED));
         }
         // I would write another test for this, but at this point I'm pretty
         // sure it works, and I have other homework to do. TODO
         matches = CuT.findMatches(TEST_REGEX_3);
+        final int EXPECTED_MATCH_LISTSIZE = 274;
         Assert.assertEquals(EXPECTED_MATCH_LISTSIZE, matches.size());
     }
 

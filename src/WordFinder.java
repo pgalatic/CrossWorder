@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  */
 public class WordFinder {
 
-    private static final String FILE = "../resources/ospd.txt";
+    private static final String FILE = "resources/ospd.txt";
     private static final int NUM_RETURN_VALUES = 100;
 
     CharSequence fileContents;

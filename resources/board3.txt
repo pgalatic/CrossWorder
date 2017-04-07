@@ -1,9 +1,47 @@
-___d..___
-___o..___
-agent.___
-...ar____
-..close..
-cradle...
-con.l____
-tsa..____
-val..____
+____..___
+____..___
+_____.___
+...______
+.._____..
+______...
+___._____
+___..____
+___..____
+
+9x9 puzzle
+
+ACROSS
+
+(0, 0) : viking pastime
+(0, 6) : ...you're making a scene
+(1, 0) : sang while rome burned
+(1, 6) : telltale heart, raven
+(2, 0) : secret _______
+(2, 6) : girl's name
+(3, 3) : commonly starving
+(4, 2) : It
+(5, 0) : baby bed
+(6, 0) : swindler
+(6, 4) : male name, two l's
+(7, 0) : security theatre
+(7, 5) : narcissistic
+(8, 0) : value, abbreviated
+(8, 5) : German pronoun for self (f)
+
+DOWN
+
+(0, 0) : complement to dna
+(5, 0) : electronic eye
+(0, 1) : automatic electric gun (abbr)
+(5, 1) : pink, in spanish
+(0, 2) : irritation
+(4, 2) : artificial river
+(0, 3) : Duck, Trump
+(3, 4) : internet mischief maker
+(4, 5) : a dozen
+(0, 6) : home of paella
+(6, 6) : Open Archives Initiative (abbr)
+(0, 7) : atoms with net charge
+(6, 7) : partner of yang
+(0, 8) : famous musical, infamous fee
+(6, 8) : do not enter (abbr)

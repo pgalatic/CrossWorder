@@ -1,4 +1,3 @@
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -23,7 +22,6 @@ public class Board {
                                                 // building the regex
 
     private static final int MAX_OPTIONS_LENGTH = 10;
-    private static final int MAX_STACK_LIMIT = 300;
     private final int BOARD_SIZE;
 
     // STATE
@@ -34,10 +32,9 @@ public class Board {
     private HashSet<PointOfInterest> poiIterator;
     private Stack<PointOfInterest> memoryStack;
     private static String filename;
-    private boolean waitUser = false; // wait for user input or not
+    private boolean waitUser = true; // wait for user input or not
     private char[] line;
     private int skip = 0;
-    private int stackSize = 0;
 
     public Board(String filename){
 
@@ -62,7 +59,7 @@ public class Board {
         memoryStack = new Stack<>();
     }
 
-    private void buildBoard(String filename){
+    private void buildBoard(){
 
         System.out.println("BOARD CONSTRUCTION YIELDS:");
         System.out.println("---------------------------");
@@ -131,7 +128,7 @@ public class Board {
 
     /** Initializes the board. */
     public void init(){
-        buildBoard(filename);
+        buildBoard();
         buildPointsOfInterest();
     }
 
@@ -184,19 +181,20 @@ public class Board {
 	 * to a PointOfInterest and returns it.
 	 */
 	private PointOfInterest getMinimumRemaining(){
-		ArrayList<String> currVals = new ArrayList<>();
+		ArrayList<String> currVals;
 		PointOfInterest rtn = null;
-		String regex = "";
+		String regex;
 		int currMax = Integer.MAX_VALUE;
 		int currSize;
 		for (PointOfInterest poi : pointsOfInterest){
 			regex = buildRegex(poi);
 			currVals = wordFinder.findMatches(regex);
 			currSize = currVals.size();
-			if (currSize > 1 && currSize < currMax){
+			if (currSize > 1 && currSize < currMax){ // includes current term
 				rtn = poi;
 				rtn.setPossibleValues(currVals);
 			}
+            if (currSize == 2){ break; } // can't get lower than this
 		}
 		return rtn;
 	}
@@ -427,6 +425,7 @@ public class Board {
             if (    !totalWords.contains(currWord) &&
                     wordFinder.findMatches("\\b" + currWord + "\\b").isEmpty())
             { return false; }
+            currWord = "";
         }
 
         return true;
@@ -459,6 +458,11 @@ public class Board {
         PointOfInterest poi = new PointOfInterest(s, d);
         pointsOfInterest.add(poi);
         poiIterator.add(poi);
+    }
+
+    /** STRICTLY FOR DEBUGGING. */
+    public void addWord(String word){
+        totalWords.add(word);
     }
 
     /** Enum for holding direction. */

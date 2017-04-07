@@ -13,7 +13,9 @@ public class BoardTest {
 
     private Board CuT;
 
-    /** This test will break once isGoal() tests for duplicate words. */
+    /** This test will break once isGoal() tests for duplicate words.
+     *
+     * FIXME currently broken because test looks for words in a */
     @Test
     public void isGoal(){
         CuT = new Board(FILENAME);
@@ -35,6 +37,10 @@ public class BoardTest {
         CuT.setRow(0, ROW0);
         CuT.setRow(1, ROW1);
         CuT.setRow(2, ROW2);
+
+        CuT.addWord("van");
+        CuT.addWord("ale");
+        CuT.addWord("new");
 
         Assert.assertTrue(CuT.isGoal());
     }
